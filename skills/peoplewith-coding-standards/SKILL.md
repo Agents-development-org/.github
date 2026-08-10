@@ -1,4 +1,4 @@
-﻿---
+---
 name: peoplewith-coding-standards
 description: "PeopleWith .NET MAUI coding standards, conventions, and architecture reference. Load this skill before writing, reviewing, or planning code for the PeopleWith mobile app."
 ---
@@ -582,4 +582,3 @@ When creating UI for a specific feature domain, use these inline colors:
 | Primary text | — | `#031926` |
 | Secondary text | — | Gray / DarkGray |
 | Borders | — | `#dedede` |
-
