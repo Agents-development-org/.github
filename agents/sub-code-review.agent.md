@@ -21,12 +21,19 @@ Single responsibility: review the code changes against the ticket requirements a
 The calling agent must provide:
 1. `TICKET-DATA` — structured output from `sub-read-jira`
 2. `CODE-CHANGES-SUMMARY` — structured output from `sub-write-code`
+3. `PROJECT-TYPE` — the orchestrator-confirmed `.NET MAUI` or `ASP.NET Core MVC` classification
+4. `SKILL_RULES` — the merged rules for the confirmed project type
 
 ## Workflow
 
 ### Step 1: Read Project Conventions
 
-**First action:** Read `.github/skills/peoplewith-coding-standards/SKILL.md` using `readFile`. This is the authoritative coding standards reference defining naming conventions, architecture patterns, and constraints for this project. Do this once before reviewing any code.
+**First action:** Use the supplied `PROJECT-TYPE` and read exactly one matching framework skill using `readFile`:
+
+- `.NET MAUI` → `.github/skills/peoplewith-coding-standards/SKILL.md`
+- `ASP.NET Core MVC` → `.github/skills/dotnet-mvc-coding-standards/SKILL.md`
+
+Do not load or apply the other framework's conventions. If `PROJECT-TYPE` is missing or unsupported, stop and return the mismatch to the calling agent.
 
 ### Step 2: Read All Changed Files
 
@@ -47,11 +54,9 @@ Evaluate the changes against:
 - [ ] Appropriate null/error handling at boundaries
 
 **Architecture**
-- [ ] Code-behind MVVM-lite pattern used (no separate ViewModel layer)
-- [ ] Static `APICalls` class used for all API calls (no DI container)
-- [ ] `CrashDetected.NotasyncMethod(ex)` used for all exception handling
-- [ ] `BaseNotify` used for `INotifyPropertyChanged`
-- [ ] `ObservableCollection<T>` used for list bindings
+- **For .NET MAUI only:** code-behind MVVM-lite, static `APICalls`, `CrashDetected.NotasyncMethod(ex)`, `BaseNotify`, and `ObservableCollection<T>` follow the loaded MAUI skill
+- **For ASP.NET Core MVC only:** controllers, dependency injection, services/repositories, DTOs, Razor views, and persistence follow the loaded MVC skill
+- [ ] No conventions from the other framework were applied
 
 **Security (OWASP Top 10)**
 - [ ] No injection vulnerabilities (SQL, LDAP, etc.)
@@ -63,7 +68,7 @@ Evaluate the changes against:
 - [ ] New/changed logic has test coverage
 - [ ] Tests are meaningful, not trivial
 
-### Step 3: Return Structured Feedback
+### Step 4: Return Structured Feedback
 
 ```
 CODE REVIEW

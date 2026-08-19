@@ -19,17 +19,38 @@ Single responsibility: read the current draft plan from the temp workspace, scor
 The calling agent must provide:
 1. `TICKET-KEY` — the Jira ticket key (e.g. `GPP-123`), used to locate the plan file
 2. `TICKET-DATA` — structured output from `sub-read-jira`, used to verify AC coverage
+3. `TARGET-PROJECT` — the exact workspace-relative `.csproj` path selected during discovery
+4. `PROJECT-TYPE` + `PROJECT-EVIDENCE` — the discovery classification and its concrete evidence
+5. `CODEBASE-POINTERS` — relevant files owned by the target project
+
+If `TARGET-PROJECT`, `PROJECT-TYPE`, or `PROJECT-EVIDENCE` is missing, stop and return:
+`ERROR: authoritative project identity missing from evaluation inputs`.
 
 ## Workflow
 
-### Step 1: Load Conventions & Read the Plan
+### Step 1: Detect the Stack, Load the Matching Conventions & Read the Plan
 
-**First action:** Read `.github/skills/peoplewith-coding-standards/SKILL.md` using `readFile`. This is the sole authoritative reference for all coding standards and conventions — use it for Dimension 1 scoring.
+**First action — read the plan, then verify the supplied target project from hard evidence, exactly as `sub-plan-draft` does.** Do NOT assume MAUI and do not search the workspace for a replacement project.
 
-Read the plan file from:
-```
-.agent-workspace/{TICKET-KEY}/IMPL-PLAN-{TICKET-KEY}.md
-```
+1. Read `.agent-workspace/{TICKET-KEY}/IMPL-PLAN-{TICKET-KEY}.md`.
+2. Read `TARGET-PROJECT` directly and verify that it owns the plan's files and `CODEBASE-POINTERS`.
+3. Classify from concrete signals in that project only:
+
+| Signal (observed in the actual project) | Project type | Matching skill folder (discovered at runtime) |
+|--------|--------------|-----------------------------------------------|
+| `Microsoft.NET.Sdk.Web`, `AddControllersWithViews`, `Controller` base classes, `.cshtml` views, `DbContext`, any `*.Mvc.csproj` | **ASP.NET Core MVC** | The skill under `.github/skills/` whose content describes MVC conventions (e.g. `dotnet-mvc-coding-standards`) |
+| `UseMaui`, `net*-android`/`-ios`/`-maccatalyst` TFMs, `.xaml` + `.xaml.cs`, `APICalls.cs`, `Syncfusion.Maui.*` | **.NET MAUI** | The skill under `.github/skills/` whose content describes MAUI/PeopleWith conventions (e.g. `peoplewith-coding-standards`) |
+
+Compare the verified classification with the supplied `PROJECT-TYPE`, `PROJECT-EVIDENCE`, and the plan's `PROJECT TYPE`/`TARGET PROJECT` fields. If any disagree, stop and return:
+`ERROR: project identity conflict — TARGET-PROJECT evidence does not match discovery or plan`.
+
+**Load only the matching conventions skill.** Discover skill metadata, select the skill matching the verified target stack, and do not load the body of the non-matching framework skill:
+1. Enumerate all skill files: `fileSearch` `.github/skills/**/SKILL.md`.
+2. Read only enough frontmatter (`name:` and `description:`) to identify the matching framework skill.
+3. Read the full matching skill and use it as the conventions reference for Dimension 1 and Dimension 4 scoring.
+
+If no matching skill is found for the detected stack, stop and return:
+`ERROR: No coding-standards skill found under .github/skills/ for detected stack {stack}. Ensure the correct skill is present in the workspace.`
 
 If the file does not exist, stop and return:
 `ERROR: Plan file not found at .agent-workspace/{TICKET-KEY}/IMPL-PLAN-{TICKET-KEY}.md — ensure sub-plan-draft has run first.`
@@ -41,15 +62,17 @@ Score each dimension independently on a scale of 1-5 using the criteria below.
 ---
 
 #### Dimension 1: Instruction Adherence
-*Does the plan follow the conventions defined in the coding standards skill?*
+*Does the plan follow the conventions defined in the coding-standards skill **for the detected stack**?*
+
+> If the plan targets the wrong stack entirely (e.g. an ASP.NET MVC plan for a .NET MAUI project, or a MAUI plan for an MVC project), score **1** and record it as the primary issue.
 
 | Score | Criteria |
 |-------|----------|
-| 5 | All naming conventions correct (lowercase model filenames and properties, PascalCase view files and methods, `Update*` helper prefix); correct file structure (`Views/{Feature}/`, `Models/`, `Helpers/`); correct patterns cited (MVVM-lite code-behind, no DI container, `APICalls` static class, `CrashDetected`, `BaseNotify`, `ObservableCollection`) |
+| 5 | All naming conventions correct for the detected stack — **MAUI:** lowercase model filenames/properties, PascalCase view files and methods, `Update*` helper prefix, structure `Views/{Feature}/`, `Models/`, `Helpers/`, patterns (MVVM-lite code-behind, no DI container, `APICalls` static class, `BaseNotify`, `ObservableCollection`); **MVC:** PascalCase types/files/properties, `Controller` suffix, interface+implementation services/repositories, DTOs (never entities), structure `Controllers/`, `Services/`, `Repositories/`, `Models/{Feature}/`, `Views/{Feature}/`, DI via `AddScoped` in `Program.cs` |
 | 4 | Minor deviation in one area that does not affect implementation correctness |
-| 3 | 1-2 fixable convention violations (e.g. wrong casing on a property name, missing `CrashDetected` reference) |
+| 3 | 1-2 fixable convention violations (e.g. wrong casing on a property name, missing a required base type reference) |
 | 2 | Several convention violations across multiple areas |
-| 1 | Fundamental pattern misused (e.g. DI container proposed, wrong base class, incorrect file structure for MAUI) |
+| 1 | Fundamental pattern misused **or wrong stack targeted** (e.g. DI container proposed for MAUI, controllers/`DbContext` proposed for MAUI, static `APICalls`/XAML proposed for MVC, wrong base class, incorrect file structure for the detected stack) |
 
 ---
 
@@ -80,15 +103,15 @@ Score each dimension independently on a scale of 1-5 using the criteria below.
 ---
 
 #### Dimension 4: Completeness
-*Are all required file categories present for the feature type described by the ticket?*
+*Are all required file categories present for the feature type described by the ticket, **for the detected stack**?*
 
 | Score | Criteria |
 |-------|----------|
-| 5 | All expected categories present: Model (`user{feature}.cs`), all required Views (Add/All/Single as required by ACs), APICalls endpoint constants, Update helper if list refresh needed, Converter if display transformation needed |
+| 5 | All expected categories present for the stack — **MAUI:** Model (`user{feature}.cs`), required Views (Add/All/Single as ACs require), APICalls endpoint constants, Update helper if list refresh needed, Converter if display transformation needed; **MVC:** Domain entity, `DbSet` + migration, DTO(s), repository (interface+impl), service (interface+impl), controller, required Razor views, DI registration in `Program.cs` |
 | 4 | All required categories present; 1 optional category absent with a justification in NOTES |
 | 3 | Core files present; 1 optional category missing without justification |
-| 2 | A required category is present but incomplete (e.g. Model defined but missing key properties) |
-| 1 | A required category is entirely missing (e.g. no Model, no APICalls entries) |
+| 2 | A required category is present but incomplete (e.g. Model/entity defined but missing key properties) |
+| 1 | A required category is entirely missing (e.g. no Model/entity, no APICalls entries / no repository or controller) |
 
 ---
 

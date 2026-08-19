@@ -1,6 +1,6 @@
 ---
 name: sub-write-code
-description: Implement a feature in a .NET MAUI codebase following an approved implementation plan
+description: Implement a feature in a .NET MAUI or ASP.NET Core MVC codebase following an approved implementation plan
 model: Bedrock-Kimi-dev (litellm)
 tools:
   - read/readFile
@@ -24,6 +24,8 @@ The calling agent must provide:
 1. `PLAN` — structured output from `sub-plan-draft` (human-approved; contains files to create/modify, model properties, API endpoints, implementation order)
 2. `TICKET-DATA` — structured output from `sub-read-jira`
 3. `CODEBASE-SUMMARY` — structured output from `sub-explore-codebase` (relevant files, patterns, and structure for this task)
+4. `PROJECT-TYPE` — the orchestrator-confirmed `.NET MAUI` or `ASP.NET Core MVC` classification
+5. `SKILL_RULES` — the merged rules for the confirmed project type
 
 ## 🚨 CRITICAL — IMPLEMENT, DON'T EXPLORE (READ FIRST)
 
@@ -42,26 +44,30 @@ This context window is small. If you spend it searching and re-reading, you will
 
 ### Step 1: Load Conventions & Implement
 
-**First action:** Read `.github/skills/peoplewith-coding-standards/SKILL.md` using `readFile`. This is the sole authoritative reference for all coding standards, naming conventions, architecture patterns, and project structure. Do this once at the start — do not re-read it later.
+**First action:** Confirm the supplied `PROJECT-TYPE` agrees with `CODEBASE-SUMMARY` and `PLAN`, then read exactly one matching framework skill using `readFile`:
+
+- `.NET MAUI` → `.github/skills/peoplewith-coding-standards/SKILL.md`
+- `ASP.NET Core MVC` → `.github/skills/dotnet-mvc-coding-standards/SKILL.md`
+
+Do not load or apply the other framework's conventions. If the inputs disagree, stop and return the mismatch to the calling agent instead of guessing.
 
 Then work through the `PLAN`'s file list **in order**, creating/editing one file at a time. For each target file, read it once (if it already exists and needs modification), then edit it. Do not batch-read many files up front.
 
 Follow the `PLAN` exactly — do not deviate from the files, structure, or order defined there.
-Apply all conventions from the skill:
-- Match naming conventions exactly (lowercase model properties, PascalCase views and methods)
-- **Namespace is flat `PeopleWith` for all production code** — do NOT use folder-based namespaces like `PeopleWith.Views.WaterIntake`. View code-behind, helpers, and models all live in `namespace PeopleWith`.
-- No DI container — use static `APICalls` and direct instantiation
-- Use `ObservableCollection<T>` for all list bindings
-- Wrap all async operations in try-catch with `crashhandler.NotasyncMethod(ex)`
+Apply all conventions from the selected skill and supplied `SKILL_RULES`:
+- **For .NET MAUI only:** use its model naming, flat namespace, static API, binding collection, and exception-handling conventions
+- **For ASP.NET Core MVC only:** use folder-based namespaces, controllers, dependency injection, services/repositories, DTOs, Razor views, and persistence conventions from the MVC skill
+- Never apply conventions from one framework to the other
 - Do not introduce new NuGet packages without noting them explicitly
 - Keep changes minimal and scoped to the ticket
 
 ### Step 2: Verify Build Consistency
 
 After writing (using only files already in your context — do not open a fresh exploration pass), check that:
-- New files use the flat `namespace PeopleWith` (SDK-style project auto-includes `.cs` files; no manual `.csproj` edit is needed unless `PLAN` says otherwise)
+- New files use the namespace convention required by the selected framework skill
 - No unresolved `using` directives
-- All properties referenced in XAML bindings exist on the code-behind class
+- For MAUI, all properties referenced in XAML bindings exist on the code-behind class
+- For MVC, all models and actions referenced by Razor views exist and use the expected types
 
 ### Step 3: Return Summary
 
@@ -88,11 +94,11 @@ Do NOT under any circumstances:
 - **Bypass TLS/SSL.** Never generate `ServerCertificateCustomValidationCallback` that returns `true` or any equivalent certificate validation bypass.
 - **Log PII or health data.** Never generate `Debug.Write`, `Console.Write`, Sentry breadcrumbs, or any log statement that includes user names, email addresses, health conditions, medication names, or any personal health information.
 - **Use MD5 for new security operations.** It is legacy. Reference `PasswordEncryption.GetHashAsHex()` only where it already exists in the codebase; do not introduce new MD5 usage.
-- **Call non-PeopleWith URLs.** Application code must only call `https://pwapi.peoplewith.com/api/`. Do not generate code that calls any other URL from within app logic.
+- **For .NET MAUI tasks, call non-PeopleWith URLs.** MAUI application code must only call `https://pwapi.peoplewith.com/api/`. This restriction does not define MVC endpoints.
 - **Touch `MauiProgram.cs` or `AppShell.xaml`** unless the approved `PLAN` explicitly names them as files to change.
 - **Write `async void`** except for event handlers (`*_Clicked`, `*_Tapped`) and page lifecycle overrides (`OnAppearing`, `OnNavigatedTo`, etc.).
 - **Swallow exceptions silently.** Every `catch` block must call `crashhandler.NotasyncMethod(ex)`. An empty catch or one that only logs to the console is not acceptable.
-- **Add NuGet packages** not already present in `PeopleWith.csproj` without listing them explicitly in NOTES FOR REVIEW.
+- **Add NuGet packages** not already present in the target project without listing them explicitly in NOTES FOR REVIEW.
 
 ## Notes
 

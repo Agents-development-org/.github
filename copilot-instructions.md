@@ -28,12 +28,10 @@ Token cost is dominated by **input** (re-sent conversation history). Every line 
 
 1. **Always truncate verbose CLI output before it enters the conversation.**
    - `dotnet build` / `dotnet test`: pipe through `Select-Object -Last 20` or `Select-String -Pattern 'error|Error'` — **never** return 5000+ warnings.
-   - `graphify extract`: redirect to a file (`graphify extract . --code-only --no-viz > graphify-out/extract.log`), then read only the summary line.
    - Any command producing >50 lines: redirect to a temp file and return only the tail or an error filter.
 2. **Never re-run a failing command without fixing the root cause first.** Capture the error list once, fix, then rebuild. Do not re-capture the same large error output.
 3. **Prefer targeted project builds** over full solution builds: `dotnet build <Project>.csproj --no-restore`.
-4. **Prefer `graphify query "<question>"` over `graphify extract` output** — the graph is already built; query it for targeted answers instead of dumping the whole graph. See `docs/mcp-server-selection.md` for which MCP servers to enable per task type.
-5. **Split long workflows into separate prompts.** Build, test, and debug are separate conversations — do not chain them in one. Start a new chat between major phases and paste a 5-line state summary.
-6. **Compact early.** Trigger `/compact` when the conversation exceeds 30 messages — do not wait for auto-compaction at 100+.
-7. **Use subagents for exploration.** Delegate file-reading sprees to the `Explore` subagent; only its compact summary enters the main context.
+4. **Split long workflows into separate prompts.** Build, test, and debug are separate conversations — do not chain them in one. Start a new chat between major phases and paste a 5-line state summary.
+5. **Compact early.** Trigger `/compact` when the conversation exceeds 30 messages — do not wait for auto-compaction at 100+.
+6. **Use subagents for exploration.** Delegate file-reading sprees to the `Explore` subagent; only its compact summary enters the main context.
 

@@ -23,6 +23,8 @@ The calling agent must provide:
 1. `PLAN` — structured output from `sub-plan-draft` (the human-approved plan)
 2. `CODEBASE-SUMMARY` — structured output from `sub-explore-codebase` (relevant files, patterns, and structure for this task)
 3. `CORRECTION-NOTES` *(optional)* — specific feedback from the human when called in fix or scratch mode
+4. `PROJECT-TYPE` — the orchestrator-confirmed `.NET MAUI` or `ASP.NET Core MVC` classification
+5. `SKILL_RULES` — the merged rules for the confirmed project type
 
 ## Modes
 
@@ -38,16 +40,21 @@ The calling agent (`software-engineer`) may invoke this agent in three modes. De
 
 ### Step 1: Load Conventions & Locate or Create Test Project (HARD RULE)
 
-**First action:** Read `.github/skills/peoplewith-coding-standards/SKILL.md` using `readFile`. This is the sole authoritative reference for all coding standards, naming conventions, and project structure. Do this once at the start.
+**First action:** Confirm the supplied `PROJECT-TYPE` agrees with `CODEBASE-SUMMARY` and `PLAN`, then read exactly one matching framework skill using `readFile`:
+
+- `.NET MAUI` → `.github/skills/peoplewith-coding-standards/SKILL.md`
+- `ASP.NET Core MVC` → `.github/skills/dotnet-mvc-coding-standards/SKILL.md`
+
+Do not load or apply the other framework's conventions. If the inputs disagree, stop and return the mismatch to the calling agent instead of guessing. For MVC, follow the selected skill's xUnit, mocking, controller, and naming conventions.
 
 **🛑 HARD RULE — a real test project MUST exist before any test file is written. No exceptions.**
 
-1. **Locate the solution root** — find the `*.sln` file (e.g. `PeopleWith.sln`). The folder containing the `.sln` is the **solution root**. The test project MUST live directly under this folder, next to the `.sln` — never in `.agent-workspace/`, never outside the repo, never in any other staging area.
-2. **Derive the main project name** from the main app `.csproj` referenced by the `.sln` (e.g. `PeopleWith.csproj` → main project name `PeopleWith`).
+1. **Locate the solution root** — find the `*.sln` file. The folder containing the `.sln` is the **solution root**. The test project MUST live directly under this folder, next to the `.sln` — never in `.agent-workspace/`, never outside the repo, never in any other staging area.
+2. **Derive the main project name** from the main app `.csproj` referenced by the `.sln`.
 3. **Look for an existing test project** under the solution root:
    - `{MainProjectName}.UnitTests/{MainProjectName}.UnitTests.csproj`, or any `*.UnitTests.csproj` / `*.Tests.csproj` already listed in `CODEBASE-SUMMARY` or found via `search/fileSearch` scoped to the solution root.
 4. **If no test project exists — CREATE ONE (MANDATORY, not optional):**
-   - Path: `{solution-root}/{MainProjectName}.UnitTests/{MainProjectName}.UnitTests.csproj` (e.g. `PeopleWith.UnitTests/PeopleWith.UnitTests.csproj`).
+  - Path: `{solution-root}/{MainProjectName}.UnitTests/{MainProjectName}.UnitTests.csproj`.
    - Framework: **xUnit** (`xunit`, `xunit.runner.visualstudio`, `Microsoft.NET.Test.Sdk`) targeting the repo's .NET version (e.g. `net9.0`).
    - Include a **project reference** to the main `{MainProjectName}.csproj` **only if compatible**; if the main project targets a MAUI workload (e.g. `net9.0-android`) that a plain test TFM cannot reference, omit the project reference and note it in FLAGGED ISSUES.
    - **Register the new project in the `.sln`** so `dotnet test` at the solution level discovers it.
@@ -67,6 +74,8 @@ Follow naming and structure conventions from the skill.
 
 For each item in the PLAN's `FILES TO CREATE` and `FILES TO MODIFY`, identify what must be tested:
 
+**For .NET MAUI plans:**
+
 | Plan item | Tests to write |
 |-----------|----------------|
 | `Models/user{feature}.cs` | Property defaults, `INotifyPropertyChanged` firing |
@@ -74,6 +83,8 @@ For each item in the PLAN's `FILES TO CREATE` and `FILES TO MODIFY`, identify wh
 | `Views/{Feature}/All{Feature}.xaml.cs` | List loads correctly, delete removes item, empty state handled |
 | `Helpers/{Feature}Converter.cs` | Happy path conversion, null/empty input, invalid input returns safe default |
 | `APICalls.cs` additions | URL constant format matches OData pattern |
+
+**For ASP.NET Core MVC plans:** derive tests from controller actions, services, repositories, DTO validation, and other files named by the plan, following the selected MVC skill.
 
 For each AC in the plan's `AC MAPPING`, write at least one test that will fail until the implementation satisfies it.
 
@@ -132,7 +143,7 @@ FLAGGED ISSUES:
 
 Do NOT:
 - **Write tests outside the test project.** All test files MUST live in `{MainProjectName}.UnitTests/` next to the `.sln` (see Step 1 hard rule). If no test project exists, create it there — never stage tests in `.agent-workspace/` or any other folder.
-- **Make live HTTP calls.** Tests must not call `pwapi.peoplewith.com` or any real endpoint — mock all external dependencies using the project's existing mocking library.
+- **Make live HTTP calls.** Tests must not call any real endpoint, including the MAUI API endpoint — mock all external dependencies using the project's existing mocking library.
 - **Use real PII or health data.** Do not hardcode real user IDs, email addresses, or real health records in test fixtures. Use anonymised placeholder values (e.g. `"test-user-id"`, `"user@example.com"`).
 - **Touch files outside the current feature scope.** Only create or modify test files that correspond to files listed in the plan's `FILES TO CREATE` / `FILES TO MODIFY` sections.
 - **Write non-deterministic tests.** Tests must not depend on device state, installed apps, platform permissions, real clocks, or random values — use deterministic inputs and mocked dependencies.
