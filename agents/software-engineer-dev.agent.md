@@ -260,6 +260,13 @@ flowchart TD
 
 ## Phase 6 — Wrap-up
 
+**MANDATORY DOCS STEP:** Always invoke `sub-generate-docs` exactly once after the
+code-review gate is resolved and before `sub-update-jira`, cleanup, or PR creation.
+The orchestrator must not infer that documentation is unnecessary from the ticket,
+acceptance criteria, change size, or code-review output. Only `sub-generate-docs`
+may determine the documentation action. Record its `DOCS GENERATED` result, or
+surface its failure and stop; never silently skip or substitute this step.
+
 ```mermaid
 flowchart TD
   R[sub-code-review] --> GR{GATE AWAITING_REVIEW_APPROVAL}
