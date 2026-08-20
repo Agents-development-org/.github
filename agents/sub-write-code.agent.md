@@ -9,7 +9,6 @@ tools:
   - search/textSearch
   - search/fileSearch
   - search/usages
-  - agent/runSubagent
 user-invocable: false
 argument-hint: "<PLAN> <TICKET-DATA> <CODEBASE-SUMMARY>"
 ---

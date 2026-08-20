@@ -8,7 +8,6 @@ tools:
   - search/codebase
   - search/textSearch
   - search/fileSearch
-  - agent/runSubagent
 user-invocable: false
 argument-hint: "<PLAN> <CODEBASE-SUMMARY> [CORRECTION-NOTES]"
 ---

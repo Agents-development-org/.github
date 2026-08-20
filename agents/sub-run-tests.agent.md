@@ -9,7 +9,6 @@ tools:
   - search/textSearch
   - search/fileSearch
   - terminal
-  - agent/runSubagent
 user-invocable: false
 argument-hint: "<CODE-CHANGES> <TEST-FILES>"
 ---

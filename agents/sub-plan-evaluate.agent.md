@@ -5,7 +5,6 @@ model: Coder-fast-2 (litellm)
 tools:
   - read/readFile
   - search/fileSearch
-  - agent/runSubagent
 user-invocable: false
 argument-hint: "<TICKET-KEY> <TICKET-DATA>"
 ---

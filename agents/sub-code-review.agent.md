@@ -7,7 +7,6 @@ tools:
   - search/changes
   - search/codebase
   - search/textSearch
-  - agent/runSubagent
 user-invocable: false
 argument-hint: "<TICKET-DATA> <CODE-CHANGES-SUMMARY>"
 ---

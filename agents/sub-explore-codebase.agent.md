@@ -9,7 +9,6 @@ tools:
   - search/usages
   - read/readFile
   - run/terminal
-  - agent/runSubagent
 user-invocable: false
 argument-hint: "<TASK-DESCRIPTION>"
 ---

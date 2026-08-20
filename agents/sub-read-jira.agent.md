@@ -7,7 +7,6 @@ tools:
   - drax-coder/AuthCheck
   - drax-coder/GetJiraIssue
   - drax-coder/RecordPrompt
-  - agent/runSubagent
 user-invocable: false
 argument-hint: "<TICKET-KEY>"
 ---
