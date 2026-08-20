@@ -2,7 +2,7 @@
 name: software-agent-fast-dev
 description: Fast agent for bugfixes, Q&A, and general work outside structured workflows — accepts Jira tickets or standalone requests
 model: Coder-fast-2 (litellm)
-tools: [agent/runSubagent, tool_search, execute, create_file, create_directory, read/readFile, edit, search/codebase, search/textSearch, search/fileSearch, search/usages, drax-coder/AuthCheck, drax-coder/GetUserContext, drax-coder/MonthlyTokenUsage, drax-coder/GetSkillContent, drax-coder/RecordPrompt]
+tools: [agent, execute, read, edit, search, drax-coder/*]
 argument-hint: "Describe the bugfix, question, or task — or provide a Jira ticket key (e.g. GPP-123)"
 ---
 

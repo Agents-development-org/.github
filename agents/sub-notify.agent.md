@@ -57,6 +57,7 @@ Do not invent or assume any details not provided by the calling agent.
 | `DOCS_GENERATED` | Documentation Generated |
 | `CODE_WRITTEN` | Code Changes Written |
 | `WORKFLOW_STARTED` | Workflow Started |
+| `TEST_WRITING_STARTED` | Test Writing Started |
 | `AWAITING_PLAN_APPROVAL` | Plan Ready for Approval |
 | `AWAITING_TEST_APPROVAL` | Tests Ready for Review |
 | `AWAITING_CODE_APPROVAL` | Code Ready for Approval |

@@ -2,7 +2,7 @@
 name: software-engineer-dev
 description: Software engineering agent for .NET repos — provide a Jira ticket key or link to get started
 model: Coder-fast-2 (litellm)
-tools: [agent, execute, create_file, create_directory, file_search, read_file, drax-coder/AuthCheck, drax-coder/GetSkillContent, drax-coder/GetUserContext, drax-coder/MonthlyTokenUsage, drax-coder/RecordPrompt]
+tools: [agent, execute, read, edit, search, drax-coder/*]
 agents: [sub-notify, sub-read-jira, sub-explore-codebase, sub-plan-draft, sub-plan-evaluate, sub-write-tests, sub-write-code, sub-run-tests, sub-code-review, sub-generate-docs, sub-update-jira, sub-create-pr]
 argument-hint: "Enter a Jira ticket key or link (e.g. GPP-123)"
 ---
@@ -55,6 +55,7 @@ Top-level entry for ticket work. Owns Phases 0–6 and delegates each step via `
 
 13. **No claimed work without a worker result** — never claim that code, tests, review, documentation, Jira transition, Slack notification, or PR creation succeeded unless the responsible worker returned an explicit success result in the current or a prior recorded turn. A missing, blank, malformed, contradictory, or error-containing result is `FAILED` and triggers Rule 5.
 14. **Nested MCP errors are failures** — inspect both the top-level tool response and any JSON string contained in fields such as `result`. If either level contains `error`, missing credentials, or a failed status, do not report success. Return the error to the human and stop.
+15. **sub-notify MUST run before sub-write-tests (MANDATORY — hard gate, cannot be skipped)** — after the plan is approved and its `RecordPrompt` call succeeds, and BEFORE invoking `sub-write-tests` (Phase 3), you MUST call `sub-notify` with `ACTION=TEST_WRITING_STARTED`, `JIRA-TICKET-KEY={TICKET-KEY}`, and an `EXTRA-DETAILS` message of the exact form: `Starting to work on Jira ticket {TICKET-KEY}`. This notification is mandatory on every entry to Phase 3, including re-runs after fix/scratch mode. Do not invoke `sub-write-tests` until `sub-notify` returns `WORKER_RESULT: SUCCESS`. If `sub-notify` returns `WORKER_RESULT: FAILED` or any error, STOP — do not proceed to `sub-write-tests`.
 15. **RecordPrompt is a mandatory hard gate after EVERY human gate response** — when the workflow is awaiting any human decision and the user replies, call `drax-coder/RecordPrompt` exactly once before consuming the decision, invoking a worker, mutating an external system, changing phase state, or reporting that the gate passed. The gate remains pending until RecordPrompt returns success. If RecordPrompt is unavailable, malformed, or returns any top-level or nested error, STOP with `GATE RECORDING FAILED`; do not continue or treat the user's response as approval. This applies to approvals, rejections, requested changes, retries, selected options, and Jira transition confirmation without exception.
 
    ### Skill classification table (authoritative — classify by the `name:` field in each skill's YAML frontmatter)
@@ -176,7 +177,9 @@ flowchart TD
   P0 --> P1[P1 Discovery — sub-explore-codebase CONFIRMS PROJECT-TYPE]
   P1 --> P2[P2 Planning loop]
   P2 --> HG2{Approve IMPL-PLAN?}
-  HG2 -->|yes| P3[P3 Write tests]
+  HG2 -->|yes| NOTIFY3[sub-notify TEST_WRITING_STARTED — 'Starting to work on Jira ticket {KEY}']
+  NOTIFY3 -->|SUCCESS| P3[P3 Write tests]
+  NOTIFY3 -->|FAILED| STOPN3[STOP — Phase 3 blocked]
   HG2 -->|changes| P2
   HG2 -->|no / silence| STOP1[STOP]
   P3 --> HG3{Approve tests?}
@@ -200,7 +203,7 @@ The budget gate (`MonthlyTokenUsage`) runs at the start of **every** turn. If `u
 | 0 | git (below); `sub-notify` `WORKFLOW_STARTED` | key | branch `feature/{key-lower}` |
 | 1 | `sub-read-jira` → `sub-explore-codebase` | key | `TICKET-DATA`, `CODEBASE-SUMMARY` |
 | 2 | planning loop (below) | ticket + summary | `PLAN`, `IMPL-PLAN-{KEY}.md` + **human yes** |
-| 3 | `sub-write-tests` | `PLAN`, summary | `TEST-FILES` + human approve |
+| 3 | `sub-notify` `TEST_WRITING_STARTED` → `sub-write-tests` | `PLAN`, summary | `TEST-FILES` + human approve |
 | 4 | `sub-write-code` | ticket, summary, `PLAN` | `CODE-CHANGES` |
 | 5 | `sub-run-tests` (build MUST succeed, then auto-fix until green) | code + tests | successful build + green + human approve |
 | 6 | wrap-up loop (below) | code + ticket | `PR-LINK` |
@@ -250,11 +253,15 @@ flowchart TD
   G -->|missing| STOP2[STOP — trace sub-plan-draft]
   G -->|ok| GATE[GATE AWAITING_PLAN_APPROVAL]
   GATE -->|yes| RP[RecordPrompt SUCCESS exactly once]
-  RP -->|success| P3[Phase 3]
+  RP -->|success| NOTIFY[sub-notify TEST_WRITING_STARTED — 'Starting to work on Jira ticket {KEY}']
+  NOTIFY -->|WORKER_RESULT: SUCCESS| P3[Phase 3 — sub-write-tests]
+  NOTIFY -->|WORKER_RESULT: FAILED| STOPN[STOP — Phase 3 blocked]
   RP -->|failure| STOP4[STOP — Phase 3 blocked]
   GATE -->|changes| D
   GATE -->|no / silence| STOP3[STOP]
 ```
+
+**Pre-Phase-3 notification gate (HARD RULE — Rule 15):** After plan approval is recorded successfully, you MUST invoke `sub-notify` with `ACTION=TEST_WRITING_STARTED`, `JIRA-TICKET-KEY={TICKET-KEY}`, and `EXTRA-DETAILS='Starting to work on Jira ticket {TICKET-KEY}'` BEFORE `sub-write-tests`. This runs on every entry to Phase 3, including fix/scratch re-runs. If `sub-notify` fails, STOP and do not invoke `sub-write-tests`.
 
 - Draft/re-draft inputs: `TICKET-DATA`, `TARGET-PROJECT`, `PROJECT-TYPE`, `PROJECT-EVIDENCE`, `CODEBASE-POINTERS`, and on revisions the `EVALUATION` issues only.
 - Evaluate inputs: `TICKET-KEY`, `TICKET-DATA`, `TARGET-PROJECT`, `PROJECT-TYPE`, `PROJECT-EVIDENCE`, and `CODEBASE-POINTERS`.
@@ -345,6 +352,7 @@ GATE(action, artifact):
 | `AWAITING_REVIEW_APPROVAL` | Approve as-is / fix selected / skip all? |
 | `AWAITING_JIRA_UPDATE_APPROVAL` | Approve Jira comment/transition to the named target status? |
 | `WORKFLOW_STARTED` / `WORKFLOW_COMPLETE` | notify only |
+| `TEST_WRITING_STARTED` | notify only — sent before `sub-write-tests`; message: "Starting to work on Jira ticket {KEY}" |
 
 For every `AWAITING_*` row above, successful `RecordPrompt` is a prerequisite to leaving the gate.
 
