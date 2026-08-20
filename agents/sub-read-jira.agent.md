@@ -1,7 +1,7 @@
 ---
 name: sub-read-jira
 description: Fetch a Jira ticket and return structured data — summary, status, description, and acceptance criteria
-model: Bedrock-Kimi-dev (litellm)
+model: Coder-fast-2 (litellm)
 tools:
   - drax-coder/mcp_agent_force_m_AuthCheck
   - drax-coder/AuthCheck

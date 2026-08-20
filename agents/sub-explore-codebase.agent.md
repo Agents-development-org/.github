@@ -1,7 +1,7 @@
 ---
 name: sub-explore-codebase
 description: Explore a .NET codebase and return a structured summary of relevant files, projects, and patterns for a given task
-model: Bedrock-Kimi-dev (litellm)
+model: Coder-fast-2 (litellm)
 tools:
   - search/fileSearch
   - search/textSearch

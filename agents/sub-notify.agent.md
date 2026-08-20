@@ -1,6 +1,6 @@
 ---
 name: sub-notify
-model: Bedrock-Kimi-dev (litellm)
+model: Coder-fast-2 (litellm)
 description: Send a Slack notification to #agent-workflow after a workflow action completes
 tools:
   - drax-coder/SendSlackMessage

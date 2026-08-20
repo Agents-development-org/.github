@@ -1,7 +1,7 @@
 ---
 name: software-engineer-dev
 description: Software engineering agent for .NET repos — provide a Jira ticket key or link to get started
-model: Bedrock-Kimi-dev (litellm)
+model: Coder-fast-2 (litellm)
 tools: [agent/runSubagent, execute, create_file, create_directory, file_search, read_file, drax-coder/*, drax-coder/AuthCheck, drax-coder/GetSkillContent, drax-coder/GetUserContext, drax-coder/MonthlyTokenUsage, drax-coder/RecordPrompt]
 argument-hint: "Enter a Jira ticket key or link (e.g. GPP-123)"
 ---

@@ -1,7 +1,7 @@
 ---
 name: sub-plan-evaluate
 description: Evaluate a drafted implementation plan using rubric scoring and return a structured critique for the calling agent
-model: Bedrock-Kimi-dev (litellm)
+model: Coder-fast-2 (litellm)
 tools:
   - read/readFile
   - search/fileSearch
