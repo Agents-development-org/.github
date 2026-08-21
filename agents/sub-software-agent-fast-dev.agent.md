@@ -1,7 +1,7 @@
 ---
 name: sub-software-agent-fast-dev
 description: Implementation engine for fast bugfixes, Q&A, and general work outside formal workflows
-model: Coder-fast-2 (litellm)
+model: Bedrock-Kimi-dev (litellm)
 tools:
   - read/readFile
   - edit

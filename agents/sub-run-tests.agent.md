@@ -1,7 +1,7 @@
 ---
 name: sub-run-tests
 description: Run the pre-written TDD test suite against completed production code, fix failures, and confirm a green build
-model: Coder-fast-2 (litellm)
+model: Bedrock-Kimi-dev (litellm)
 tools:
   - read/readFile
   - edit

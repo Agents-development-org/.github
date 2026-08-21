@@ -1,7 +1,7 @@
 ---
 name: sub-write-code
 description: Implement a feature in a .NET MAUI or ASP.NET Core MVC codebase following an approved implementation plan
-model: Coder-thinking-1 (litellm)
+model: Bedrock-Kimi-dev (litellm)
 tools:
   - read/readFile
   - edit

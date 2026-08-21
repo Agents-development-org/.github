@@ -1,7 +1,7 @@
 ---
 name: sub-plan-draft
 description: Draft or revise an implementation plan for a Jira ticket, then persist it to a temporary workspace file for the evaluate agent to read
-model: Coder-thinking-1 (litellm)
+model: Bedrock-Kimi-dev (litellm)
 tools:
   - read/readFile
   - edit

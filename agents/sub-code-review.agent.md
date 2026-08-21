@@ -1,7 +1,7 @@
 ---
 name: sub-code-review
 description: Review .NET code changes against the ticket requirements and codebase conventions, and return structured feedback
-model: Coder-fast-2 (litellm)
+model: Bedrock-Kimi-dev (litellm)
 tools:
   - read/readFile
   - search/changes

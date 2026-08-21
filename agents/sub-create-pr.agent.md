@@ -1,7 +1,7 @@
 ---
 name: sub-create-pr
 description: Create a GitHub pull request for completed .NET code changes linked to a Jira ticket
-model: Coder-fast-2 (litellm)
+model: Bedrock-Kimi-dev (litellm)
 tools:
   - drax-coder/ListGitHubBranches
   - drax-coder/CreateGitHubPR

@@ -1,7 +1,7 @@
 ---
 name: software-agent-fast-dev
 description: Fast agent for bugfixes, Q&A, and general work outside structured workflows — accepts Jira tickets or standalone requests
-model: Coder-fast-2 (litellm)
+model: Bedrock-Kimi-dev (litellm)
 tools: [agent, execute, read, edit, search, drax-coder/*]
 argument-hint: "Describe the bugfix, question, or task — or provide a Jira ticket key (e.g. GPP-123)"
 ---
