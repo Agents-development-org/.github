@@ -9,6 +9,7 @@ tools:
   - search/textSearch
   - search/fileSearch
   - search/usages
+  - execute/runInTerminal
   - agent/runSubagent
   - create_file
 user-invocable: false
@@ -27,6 +28,7 @@ The calling agent provides:
 - `REQUEST_TYPE` — either `jira` (Jira ticket) or `general` (bugfix/question/task)
 - `REQUEST_DATA` — either a Jira ticket key (e.g., `GPP-123`) or user's bugfix/question description
 - `SKILL_RULES` — the merged key coding-standards rules (and skill file paths) the orchestrator loaded; apply these as your conventions. If you need full detail, `read_file` the referenced skill paths.
+- `GRAPHIFY-GRAPH` — the orchestrator-verified workspace-relative path `graphify-out/graph.json`. Use it in Step 0 (Graphify-First Read Gate) before any `read_file` of source files.
 - Any relevant file paths / code snippets the user provided
 
 ## Request Validation
@@ -42,6 +44,15 @@ If files are not provided, respond with:
 Proceed only after the user has provided the necessary context.
 
 ## Workflow
+
+### Step 0: Graphify-First Read Gate (MANDATORY — runs before any raw `read_file` of source files)
+
+The STRICT FILE READING PROTOCOL in `.github/copilot-instructions.md` applies to this worker. Before opening any repository `.cs`/`.cshtml`/`.csproj` source file, run the gate:
+
+- **Step 0a (1 tool call):** `graphify query "<REQUEST description or symbol>" --budget 1500` from `{WORKSPACE_ROOT}`. Use the returned nodes/edges/`source_file` locations to identify the 1–3 files relevant to the request and target reads with line ranges.
+- **Step 0b (1 tool call, only if 0a errors/returns nothing):** `grep`/`Select-String` `graphify-out/graph.json` for the request's symbols; read each matching node's `source_file` and use those exact paths verbatim (double-nested root: `EverydayGoods/EverydayGoods/...`). This is infrastructure, not a source-file read.
+
+Then read at most 3 distinct source files, each with a targeted `startLine`/`endLine` range. If `graphify-out/graph.json` is missing/empty, STOP and return `ERROR: verified Graphify graph input is missing or invalid`. Do not install, rebuild, or update Graphify.
 
 ### Step 1: Handle Request Type
 

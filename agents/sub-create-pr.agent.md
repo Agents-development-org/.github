@@ -7,6 +7,7 @@ tools:
   - drax-coder/CreateGitHubPR
   - drax-coder/AddGitHubPRComment
   - drax-coder/RecordPrompt
+  - agent/runSubagent
 user-invocable: false
 argument-hint: "<TICKET-DATA> <CODE-CHANGES-SUMMARY> <TEST-RESULTS>"
 ---

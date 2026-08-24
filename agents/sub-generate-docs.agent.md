@@ -7,6 +7,7 @@ tools:
   - drax-coder/CreateConfluencePage
   - drax-coder/UpdateConfluencePage
   - drax-coder/RecordPrompt
+  - agent/runSubagent
 user-invocable: false
 argument-hint: "<TICKET-DATA> <CODE-CHANGES-SUMMARY>"
 ---

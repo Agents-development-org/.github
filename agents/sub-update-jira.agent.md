@@ -7,6 +7,7 @@ tools:
   - drax-coder/AddJiraComment
   - drax-coder/TransitionJiraIssue
   - drax-coder/RecordPrompt
+  - agent/runSubagent
 user-invocable: false
 argument-hint: "<TICKET-KEY> <UPDATE-TYPE: comment|transition|both> <DETAILS>"
 ---
@@ -21,10 +22,6 @@ The calling agent must provide:
 1. `TICKET-KEY` — e.g. `VAI-123`
 2. `UPDATE-TYPE` — `comment`, `transition`, or `both`
 3. `DETAILS` — context to include in the comment or the target transition state
-4. `TARGET-STATUS` — required for `transition` or `both`
-5. `HUMAN-CONFIRMATION` — the user's explicit approval text for this Jira update
-
-If `HUMAN-CONFIRMATION` is missing or does not explicitly approve this Jira update, return `WORKER_RESULT: FAILED` without calling a Jira mutation tool.
 
 ## Workflow
 
@@ -32,13 +29,17 @@ If `HUMAN-CONFIRMATION` is missing or does not explicitly approve this Jira upda
 
 Use `GetJiraIssue` with `issueIdOrKey` to confirm the ticket exists and read its current status before making any changes.
 
-Inspect both the top-level response and any JSON string in a `result` field. If either contains `"error"`, missing credentials, or a failed status, stop and return `WORKER_RESULT: FAILED` with the non-secret error summary.
+If the response contains `"error"`, stop and return: `ERROR: {error value from response}.`
 
 ### Step 2: Compose Update
 
-**If commenting:** Draft a concise comment summarising what was done (code changes, PR link, test results, docs link as applicable). Apply it only when `HUMAN-CONFIRMATION` explicitly covers the Jira update.
+**If commenting:**
+Draft a concise comment summarising what was done (code changes, PR link, test results, docs link as applicable).
+Present the draft to the calling agent and **wait for confirmation** before posting.
 
-**If transitioning:** Confirm `TARGET-STATUS` is a valid transition from the current status. Apply it only when `HUMAN-CONFIRMATION` explicitly covers that target status.
+**If transitioning:**
+Confirm the target status is a valid transition from the current status.
+Present the planned transition to the calling agent and **wait for confirmation** before applying.
 
 If `TransitionJiraIssue` returns an error with `available_statuses`, present those to the calling agent and ask which to use.
 
@@ -52,7 +53,6 @@ If `TransitionJiraIssue` returns an error with `available_statuses`, present tho
 ### Step 4: Return Summary
 
 ```
-WORKER_RESULT: SUCCESS
 JIRA UPDATE
 ===========
 TICKET: {TICKET-KEY}
@@ -61,16 +61,9 @@ ACTIONS TAKEN:
   - {TRANSITIONED: old status → new status, or SKIPPED}
 ```
 
-Any top-level or nested MCP error must instead return:
-
-```
-WORKER_RESULT: FAILED
-ERROR: {exact non-secret error summary}
-```
-
 ## Notes
 
-- Never post a comment or transition without the user's explicit confirmation supplied by the calling agent
+- Never post a comment or transition without confirmation from the calling agent
 - If the transition is invalid (not available from current status), report the available statuses and stop
 
 ## Prompt Recording
