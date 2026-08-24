@@ -9,7 +9,6 @@ tools:
   - search/textSearch
   - search/fileSearch
   - terminal
-  - agent/runSubagent
 user-invocable: false
 argument-hint: "<CODE-CHANGES> <TEST-FILES>"
 ---
@@ -38,7 +37,6 @@ A green `dotnet test` is not enough — **the project MUST compile first**. Befo
    | `Microsoft.NET.Sdk.Web`, `AddControllersWithViews`, `Controller` base classes, `.cshtml` views, `DbContext`, `*.Mvc.csproj` | **ASP.NET Core MVC** | `.github/skills/dotnet-mvc-coding-standards/SKILL.md` |
 3. **Read the matching skill with `readFile`** (and `.github/skills/token-efficient-workflow/SKILL.md`) once, before building. Use the skill's build/test conventions to guide every fix — do NOT apply MAUI rules to MVC code or vice versa.
 4. Record the detected project type, the main `.csproj` path, and the test `.csproj` path for use in later steps and the summary.
-5. **Graphify-First Read Gate (MANDATORY before any raw `read_file` of source files to fix a build/test bug).** The STRICT FILE READING PROTOCOL in `.github/copilot-instructions.md` applies to this worker. Before reading a `.cs`/`.cshtml` file to fix an error: (a) run `graphify query "<failing symbol or file>" --budget 1500` from `{WORKSPACE_ROOT}` and use the returned `source_file`/line locations to target the read; OR (b) if the query layer is unavailable (no LLM key), `grep`/`Select-String` `graphify-out/graph.json` for the failing symbol and read the matching node's `source_file` verbatim (double-nested root: `EverydayGoods/EverydayGoods/...`). Read at most 3 distinct source files per turn, each with a targeted `startLine`/`endLine` range. If `graphify-out/graph.json` is missing/empty, STOP and return `ERROR: verified Graphify graph input is missing or invalid`. Do not install, rebuild, or update Graphify.
 
 ### Step 1: Build the Project & Fix Compilation Bugs (HARD RULE)
 
