@@ -5,8 +5,6 @@ model: Bedrock-Kimi-dev (litellm)
 tools:
   - read/readFile
   - search/fileSearch
-  - execute/runInTerminal
-  - agent/runSubagent
 user-invocable: false
 argument-hint: "<TICKET-KEY> <TICKET-DATA>"
 ---
@@ -23,25 +21,15 @@ The calling agent must provide:
 3. `TARGET-PROJECT` — the exact workspace-relative `.csproj` path selected during discovery
 4. `PROJECT-TYPE` + `PROJECT-EVIDENCE` — the discovery classification and its concrete evidence
 5. `CODEBASE-POINTERS` — relevant files owned by the target project
-6. `GRAPHIFY-GRAPH` — the orchestrator-verified workspace-relative path `graphify-out/graph.json`
 
-If `TARGET-PROJECT`, `PROJECT-TYPE`, `PROJECT-EVIDENCE`, or `GRAPHIFY-GRAPH` is missing, stop and return:
+If `TARGET-PROJECT`, `PROJECT-TYPE`, or `PROJECT-EVIDENCE` is missing, stop and return:
 `ERROR: authoritative project identity missing from evaluation inputs`.
 
 ## Workflow
 
-### Step 0: Graphify-First Read Gate (MANDATORY — runs before any raw `read_file` of source files)
-
-The STRICT FILE READING PROTOCOL in `.github/copilot-instructions.md` applies to this worker. **The first tool call of every initial evaluation and re-evaluation MUST be Step 0a.** Do not read the plan, skills, project, or source files first.
-
-- **Step 0a (1 tool call):** `graphify query "<TICKET-KEY or symbol>" --budget 1500` from `{WORKSPACE_ROOT}`. Use the returned nodes/edges/`source_file` locations to confirm the plan's file list and target your reads with line ranges.
-- **Step 0b (1 tool call, only if 0a errors/returns nothing):** `grep`/`Select-String` `graphify-out/graph.json` for the plan's key symbols; read each matching node's `source_file` and use those exact paths verbatim (double-nested root: `EverydayGoods/EverydayGoods/...`). This is infrastructure, not a source-file read.
-
-Then read at most 3 distinct source files, each with a targeted `startLine`/`endLine` range. If `graphify-out/graph.json` is missing/empty, STOP and return `ERROR: verified Graphify graph input is missing or invalid`. Do not install, rebuild, or update Graphify.
-
 ### Step 1: Detect the Stack, Load the Matching Conventions & Read the Plan
 
-**After Step 0 succeeds,** read the plan, then verify the supplied target project from hard evidence. Do NOT assume MAUI and do not search the workspace for a replacement project.
+**First action — read the plan, then verify the supplied target project from hard evidence, exactly as `sub-plan-draft` does.** Do NOT assume MAUI and do not search the workspace for a replacement project.
 
 1. Read `.agent-workspace/{TICKET-KEY}/IMPL-PLAN-{TICKET-KEY}.md`.
 2. Read `TARGET-PROJECT` directly and verify that it owns the plan's files and `CODEBASE-POINTERS`.
@@ -152,8 +140,6 @@ EVALUATION
 TICKET: {KEY}
 ITERATION: {N}
 RESULT: PASS | FAIL
-GRAPHIFY QUERY EVIDENCE: {CLI_SUCCESS: exact command | FALLBACK_AFTER_CLI_FAILURE: CLI outcome; fallback command}
-SOURCE READS: {comma-separated distinct .cs/.cshtml/.csproj paths; maximum 3}
 
 RUBRIC SCORES:
   Instruction Adherence:  {score}/5 -- {one-line justification}

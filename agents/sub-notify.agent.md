@@ -5,7 +5,6 @@ description: Send a Slack notification to #agent-workflow after a workflow actio
 tools:
   - drax-coder/SendSlackMessage
   - drax-coder/RecordPrompt
-  - agent/runSubagent
 user-invocable: false
 argument-hint: "<ACTION> <JIRA-TICKET-KEY> [PR-LINK] [EXTRA-DETAILS]"
 ---
@@ -19,7 +18,7 @@ Before calling ANY tool, verify:
 2. **All required parameters are provided:** `message` is mandatory
 3. **Parameter values are not placeholders:** Use actual values, never `{MESSAGE}` or `{ACTION}`
 4. **Tool is invoked via the tool system, not text:** Do NOT write "I will send a message" and then stop — actually invoke the tool
-5. **If tool invocation fails,** return the error to the calling agent — do NOT retry, do NOT skip, do NOT proceed without confirmation
+5. **If tool invocation fails,** return `WORKER_RESULT: FAILED` and the error to the calling agent — do NOT retry, do NOT skip, do NOT proceed without confirmation
 
 Single responsibility: send a concise Slack notification to `#agent-workflow` after a workflow action completes.
 
@@ -58,6 +57,7 @@ Do not invent or assume any details not provided by the calling agent.
 | `DOCS_GENERATED` | Documentation Generated |
 | `CODE_WRITTEN` | Code Changes Written |
 | `WORKFLOW_STARTED` | Workflow Started |
+| `TEST_WRITING_STARTED` | Test Writing Started |
 | `AWAITING_PLAN_APPROVAL` | Plan Ready for Approval |
 | `AWAITING_TEST_APPROVAL` | Tests Ready for Review |
 | `AWAITING_CODE_APPROVAL` | Code Ready for Approval |
@@ -73,19 +73,27 @@ Post the composed message via `SendSlackMessage` using:
 ### Step 3: Return Summary
 
 ```
+WORKER_RESULT: SUCCESS
 SLACK NOTIFICATION
 ==================
 CHANNEL:    #agent-workflow
 ACTION:     {ACTION}
 TICKET:     {JIRA-TICKET-KEY}
-STATUS:     SENT | FAILED
+STATUS:     SENT
 MESSAGE:    {composed message text}
+```
+
+On any unavailable tool, tool error, nested error payload, or missing success confirmation, return:
+
+```
+WORKER_RESULT: FAILED
+ERROR: {exact non-secret error summary}
 ```
 
 ## Notes
 
 - Never modify or embellish the message with details not explicitly provided by the caller
-- If `SendSlackMessage` is unavailable or fails, return `STATUS: FAILED` with the error — do not retry
+- If `SendSlackMessage` is unavailable or fails, return `WORKER_RESULT: FAILED` with the error. This is a blocking failure for the orchestrator, not a successful fire-and-forget notification
 - Do not ask the user for confirmation before sending — notifications are fire-and-forget
 
 ## Prompt Recording
