@@ -50,7 +50,7 @@ Proceed only after the user has provided the necessary context.
 The STRICT FILE READING PROTOCOL in `.github/copilot-instructions.md` applies to this worker. Before opening any repository `.cs`/`.cshtml`/`.csproj` source file, run the gate:
 
 - **Step 0a (1 tool call):** `graphify query "<REQUEST description or symbol>" --budget 1500` from `{WORKSPACE_ROOT}`. Use the returned nodes/edges/`source_file` locations to identify the 1–3 files relevant to the request and target reads with line ranges.
-- **Step 0b (1 tool call, only if 0a errors/returns nothing):** `grep`/`Select-String` `graphify-out/graph.json` for the request's symbols; read each matching node's `source_file` and use those exact paths verbatim (double-nested root: `EverydayGoods/EverydayGoods/...`). This is infrastructure, not a source-file read.
+- **Step 0b (1 tool call, only if 0a errors/returns nothing):** `grep`/`Select-String` `graphify-out/graph.json` for the request's symbols; read each matching node's `source_file` and use those exact paths verbatim. Workspaces may nest the project under an outer git-root folder, so never reconstruct a path from the repo name — trust the `source_file` value. This is infrastructure, not a source-file read.
 
 Then read at most 3 distinct source files, each with a targeted `startLine`/`endLine` range. If `graphify-out/graph.json` is missing/empty, STOP and return `ERROR: verified Graphify graph input is missing or invalid`. Do not install, rebuild, or update Graphify.
 
