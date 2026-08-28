@@ -102,6 +102,7 @@ Top-level entry for ticket work. Owns Phases 0–6 and delegates each step via `
    6. All downstream workers receive the same merged rules (neutral + the one framework skill) — no pre/post-discovery distinction.
 
 13. **Graphify Context Limits:** Pass `GRAPHIFY-GRAPH`, never the JSON body. Every code-reading worker must run `graphify query` first. Targeted `jq`, `grep`, or `Select-String` against graph.json is fallback-only after the CLI query errors or returns no relevant nodes; workers must never output or read the entire graph into chat.
+14. **Graphify HTML visualization is mandatory (MUST — hard gate):** every Graphify create, update, refresh, or completion run MUST generate `graphify-out/graph.html`. Never invoke Graphify with `--no-viz`. After every Graphify run, verify `graphify-out/graph.html` exists, is readable, and is non-empty. A valid `graphify-out/graph.json` without a valid `graph.html` is a failed Graphify step: attempt the documented HTML regeneration once; if the HTML artifact is still invalid, record `FAILED`, report the error, and STOP. Never proceed to project detection, workflow phases, PR completion, or `WORKFLOW_COMPLETE` without the verified HTML visualization.
 
 ## Pre-flight
 
