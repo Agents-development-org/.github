@@ -2,7 +2,7 @@
 name: software-agent-fast-dev
 description: Fast agent for bugfixes, Q&A, and general work outside structured workflows — accepts Jira tickets or standalone requests
 model: Bedrock-Kimi-dev (litellm)
-tools: [agent, execute, read, edit, search, drax-coder/*]
+tools: [agent, execute, read, edit, search, drax-coder/*,graph]
 argument-hint: "Describe the bugfix, question, or task — or provide a Jira ticket key (e.g. GPP-123)"
 ---
 
@@ -152,7 +152,7 @@ Then delegate (Step 5) with the request details and type `general`.
 
 ### 5. Graphify Verify & Delegate
 
-**Graphify verify (MUST — before delegating any code-reading work).** Resolve `{WORKSPACE_ROOT}` from the open workspace (never an incidental terminal `$PWD`), then check `{WORKSPACE_ROOT}/graphify-out/graph.json` directly. Assume Graphify is already installed through Python — do not install, upgrade, or otherwise modify it. If `graph.json` exists, is readable, and is non-empty → set `GRAPHIFY-STATUS=READY` and continue. If it is missing/empty/unreadable → invoke the host-installed Graphify skill exactly as `/graphify .` from `{WORKSPACE_ROOT}` (the only permitted setup invocation; no flags), then re-verify. If verification still fails, set `GRAPHIFY-STATUS=FAILED`, call `RecordPrompt` (`status="FAILED"`), report the setup error, and STOP. Record `GRAPHIFY-GRAPH=graphify-out/graph.json` as an immutable workflow input. Do not delegate any file-reading work before this gate passes — the worker's Graphify-First Read Gate (its Step 0) requires a valid graph and will error out otherwise.
+**Graphify verify (MUST — before delegating any code-reading work).** Resolve `{WORKSPACE_ROOT}` from the open workspace (never an incidental terminal `$PWD`), then check BOTH `{WORKSPACE_ROOT}/graphify-out/graph.json` AND `{WORKSPACE_ROOT}/graphify-out/graph.html` (the interactive graph view) directly. Assume Graphify is already installed through Python — do not install, upgrade, or otherwise modify it. If `graph.json` exists, is readable, and is non-empty → set `GRAPHIFY-STATUS=READY` and continue. If `graph.json` is valid but `graph.html` is missing/empty, regenerate only the view by re-invoking the host-installed Graphify skill exactly as `/graphify .` from `{WORKSPACE_ROOT}` — the default invocation emits the interactive graph view `graph.html` alongside `graph.json`; do NOT pass `--no-viz`, and do not rebuild the graph. If `graph.json` is missing/empty/unreadable → invoke the host-installed Graphify skill exactly as `/graphify .` from `{WORKSPACE_ROOT}` (the only permitted setup invocation; no flags), then re-verify both artifacts. If verification still fails, set `GRAPHIFY-STATUS=FAILED`, call `RecordPrompt` (`status="FAILED"`), report the setup error, and STOP. Record `GRAPHIFY-GRAPH=graphify-out/graph.json` AND `GRAPHIFY-VIEW=graphify-out/graph.html` as immutable workflow inputs. Do not delegate any file-reading work before this gate passes — the worker's Graphify-First Read Gate (its Step 0) requires a valid graph and will error out otherwise.
 
 Invoke `@agents/sub-software-agent-fast-dev.agent.md`, passing:
 - `REQUEST_TYPE` — `jira` or `general`
