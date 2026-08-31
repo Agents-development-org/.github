@@ -42,7 +42,7 @@ If `GRAPHIFY-GRAPH` is missing, unreadable, or empty, STOP and return `ERROR: ve
 
 **This step is mandatory. The first tool call of the run MUST be Step 0a.** Do not call `grep_search`, `file_search`, `read_file`, or any other discovery tool first. Do not fall back to manual reads until Step 0a has failed or returned no relevant nodes.
 
-**Step 0a — Try the query layer (1 tool call):** Using the supplied `GRAPHIFY-GRAPH`, run `graphify query "<TASK-DESCRIPTION>" --budget 1500` before raw search. Use the returned nodes, relationships, and source locations to target the remaining reads. For a relationship-specific task, use `graphify path "<A>" "<B>"` instead. If it returns useful nodes/edges → proceed to Step 2 with those locations; Step 0b is not needed.
+**Step 0a — Try the query layer (1 tool call):** Using the supplied `GRAPHIFY-GRAPH`, run `graphify query "<TASK-DESCRIPTION>" --budget 10000` before raw search. Use the returned nodes, relationships, and source locations to target the remaining reads. For a relationship-specific task, use `graphify path "<A>" "<B>"` instead. If it returns useful nodes/edges → proceed to Step 2 with those locations; Step 0b is not needed.
 
 **Step 0b — Fallback (1 tool call, ONLY when 0a errors or returns nothing):** Run targeted `Select-String`, `grep`, or `jq` against the supplied `GRAPHIFY-GRAPH` and extract matching `source_file` fields. Never read graph.json in large line ranges. Record the Step 0a error/no-match outcome before using this fallback.
 

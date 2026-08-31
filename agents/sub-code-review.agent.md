@@ -29,7 +29,7 @@ The calling agent must provide:
 
 The STRICT FILE READING PROTOCOL in `.github/copilot-instructions.md` applies to this worker. Before opening any changed `.cs`/`.cshtml` source file, run the gate:
 
-- **Step 0a (1 tool call):** `graphify query "<TICKET-KEY or changed symbol>" --budget 1500` from `{WORKSPACE_ROOT}`. Use the returned relationships and `source_file` locations to understand what each changed file depends on, then target reads with line ranges.
+- **Step 0a (1 tool call):** `graphify query "<TICKET-KEY or changed symbol>" --budget 10000` from `{WORKSPACE_ROOT}`. Use the returned relationships and `source_file` locations to understand what each changed file depends on, then target reads with line ranges.
 - **Step 0b (1 tool call, only if 0a errors/returns nothing):** `grep`/`Select-String` `graphify-out/graph.json` for the changed symbols; read each matching node's `source_file` and use those exact paths verbatim. Workspaces may nest the project under an outer git-root folder, so never reconstruct a path from the repo name — trust the `source_file` value. This is infrastructure, not a source-file read.
 
 Then read at most 3 distinct source files, each with a targeted `startLine`/`endLine` range. If `graphify-out/graph.json` is missing/empty, STOP and return `ERROR: verified Graphify graph input is missing or invalid`. Do not install, rebuild, or update Graphify.
