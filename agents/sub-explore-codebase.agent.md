@@ -8,7 +8,7 @@ tools:
   - search/listDirectory
   - search/usages
   - read/readFile
-  - run/terminal
+  - execute
   - agent/runSubagent
 user-invocable: false
 argument-hint: "<TASK-DESCRIPTION>"
