@@ -103,7 +103,10 @@ else
         error "Homebrew not found. Install it first: https://brew.sh"
         exit 1
       fi
-      brew install python@3.12
+      brew install python
+      # Make sure the Homebrew-linked python3 is on PATH for this session
+      # (Apple Silicon: /opt/homebrew/bin, Intel: /usr/local/bin)
+      export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
       PYTHON_BIN="python3"
       ;;
     debian)
