@@ -1,7 +1,7 @@
 ---
 name: software-engineer-dev
 description: Software engineering agent for .NET repos — provide a Jira ticket key or link to get started
-model: Bedrock-Kimi-dev (litellm)
+model: Claude Haiku 4.5 (copilot)
 tools:  [agent, execute, read, edit, search, drax-coder/*,graphify/*]
 argument-hint: "Enter a Jira ticket key or link (e.g. GPP-123)"
 ---

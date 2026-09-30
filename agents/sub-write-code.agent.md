@@ -1,7 +1,7 @@
 ---
 name: sub-write-code
 description: Implement a feature in a .NET MAUI codebase following an approved implementation plan
-model: Bedrock-Kimi-dev (litellm)
+model: Claude Sonnet 5 (copilot)
 tools:
   - read/readFile
   - edit

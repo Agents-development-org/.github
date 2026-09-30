@@ -1,6 +1,6 @@
 ---
 name: sub-notify
-model: Bedrock-Kimi-dev (litellm)
+model: Claude Haiku 4.5 (copilot)
 description: Send a Slack notification to #agent-workflow after a workflow action completes
 tools:
   - drax-coder/SendSlackMessage

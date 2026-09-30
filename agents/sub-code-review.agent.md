@@ -1,7 +1,7 @@
 ---
 name: sub-code-review
 description: Review .NET code changes against the ticket requirements and codebase conventions, and return structured feedback
-model: Bedrock-Kimi-dev (litellm)
+model: Claude Haiku 4.5 (copilot)
 tools:
   - read/readFile
   - search/changes

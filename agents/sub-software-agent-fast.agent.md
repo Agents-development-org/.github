@@ -1,7 +1,7 @@
 ---
 name: sub-software-agent-fast
 description: Implementation engine for fast bugfixes, Q&A, and general work outside formal workflows
-model: Bedrock-Kimi-dev (litellm)
+model: Claude Haiku 4.5 (copilot)
 tools:
   - read/readFile
   - edit

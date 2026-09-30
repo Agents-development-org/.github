@@ -1,7 +1,7 @@
 ---
 name: sub-plan-evaluate
 description: Evaluate a drafted implementation plan using rubric scoring and return a structured critique for the calling agent
-model: Bedrock-Kimi-dev (litellm)
+model: Claude Haiku 4.5 (copilot)
 tools:
   - read/readFile
   - search/fileSearch
